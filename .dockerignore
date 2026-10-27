@@ -1,0 +1,17 @@
+.git
+.venv
+__pycache__
+data
+jobs
+cache
+models
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg
+*.log
+.env*
+.DS_Store
+dist
+tests

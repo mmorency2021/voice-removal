@@ -1,0 +1,31 @@
+# Python and local environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+
+# Private input audio, generated tracks, logs, and caches
+data/
+jobs/
+cache/
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg
+*.log
+.server-url
+.env
+.env.*
+
+# Models are downloaded at runtime; never commit the weights
+models/*
+!models/.gitkeep
+
+# Local packaging and editor files
+dist/
+*.zip
+.idea/
+.vscode/

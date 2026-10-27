@@ -1,0 +1,22 @@
+name: Checks
+on:
+  push:
+  pull_request:
+jobs:
+  smoke-tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Python sources
+        run: python -m py_compile app.py worker.py
+      - name: Test HTTP interface
+        run: python -m unittest discover -s tests -v
+      - name: Validate launcher syntax
+        if: runner.os == 'Linux'
+        run: bash -n run.sh

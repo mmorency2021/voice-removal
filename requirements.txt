@@ -1,0 +1,2 @@
+audio-separator[cpu]==0.47.1
+audioread>=3.0,<4

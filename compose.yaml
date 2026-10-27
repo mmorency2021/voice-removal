@@ -1,0 +1,13 @@
+services:
+  vocal-remover:
+    build: .
+    ports:
+      - "127.0.0.1:7860:7860"
+    volumes:
+      - audio-data:/app/data
+      - audio-models:/app/models
+    restart: unless-stopped
+
+volumes:
+  audio-data:
+  audio-models:
