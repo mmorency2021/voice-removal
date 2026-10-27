@@ -27,7 +27,7 @@ subprocess.run(decode+['-map','0:a:0','-ac','2','-ar','44100',str(wav)],check=Tr
 separator=Separator(model_file_dir=str(MODELS),output_dir=str(folder),output_format='WAV',
                     output_single_stem='Instrumental',use_soundfile=True,
                     mdxc_params={'segment_size':256,'override_model_segment_size':False,
-                                 'batch_size':1,'overlap':2,'pitch_shift':0})
+                                 'batch_size':1,'overlap':8,'pitch_shift':0})
 separator.torch_device=torch.device('cpu')
 separator.onnx_execution_provider=['CPUExecutionProvider']
 separator.load_model(model_filename=model)
