@@ -7,6 +7,9 @@
 :root{color-scheme:light;--bg:#f5f5f2;--surface:#fff;--ink:#1d292b;--muted:#556365;--border:#cbd4d2;--accent:#155e59;--soft:#eef5f3;--danger:#a51d30}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:850px;margin:64px auto;padding:0 24px 56px}.eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--accent);text-transform:uppercase}h1{font-size:clamp(30px,6vw,44px);line-height:1.15;letter-spacing:-.035em;margin:12px 0 16px}h2{font-size:20px;margin:0 0 8px}p{margin:0 0 20px;color:var(--muted)}.intro{max-width:620px}form{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;margin:32px 0 20px}label,legend{font-weight:650}input[type=file]{display:block;width:100%;padding:16px;border:1px dashed var(--border);border-radius:8px;background:var(--bg);margin:10px 0 8px;font:inherit;color:var(--muted)}input::file-selector-button{border:1px solid var(--border);border-radius:6px;padding:10px 14px;background:var(--surface);color:var(--ink);font:inherit;margin-right:12px;cursor:pointer}.hint{font-size:14px;margin-bottom:24px}fieldset{padding:0;border:0;margin:24px 0}legend{margin-bottom:12px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}.choice{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;font-weight:400;min-height:120px}.choice:has(input:checked){background:var(--soft);border-color:var(--accent)}.choice input{accent-color:var(--accent);margin-top:7px;width:18px;height:18px;flex-shrink:0}.choice strong{display:block;font-size:16px}.choice span span{display:block;font-size:14px;color:var(--muted);margin-top:5px}button,.download{font:inherit;font-weight:650;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:13px 24px;min-height:48px;cursor:pointer;text-decoration:none;display:inline-block}button:hover,.download:hover{filter:brightness(.9)}button:active,.download:active{filter:brightness(.8)}button:disabled{opacity:.5;cursor:wait}button:focus-visible,a:focus-visible,input:focus-visible,.choice:focus-within{outline:3px solid var(--accent);outline-offset:4px}.error{color:var(--danger);margin:16px 0 0}.status{border-top:1px solid var(--border);margin-top:24px;padding-top:24px}.status p{margin-bottom:10px}.status strong{color:var(--ink)}progress{display:block;width:100%;height:12px;accent-color:var(--accent);margin:16px 0}audio{display:block;width:100%;margin:20px 0}.note{font-size:14px;max-width:650px}.footer{border-top:1px solid var(--border);padding-top:16px;margin-top:28px;display:flex;justify-content:space-between;gap:16px;font-size:13px;color:var(--muted)}[hidden]{display:none!important}@media(max-width:600px){main{margin-top:32px;padding:0 16px 32px}form{padding:20px}.choices{grid-template-columns:1fr}.choice{min-height:0}.footer{flex-direction:column;gap:4px}button{width:100%}}@media(prefers-reduced-motion:no-preference){button,a{transition:filter .15s}}
 </style>
+<style>
+select,input[type=number]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px;min-height:44px}select{display:block;width:100%;margin:8px 0}.preview-options{border-top:1px solid var(--border);padding-top:20px;margin-bottom:24px}.preview-toggle{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer}.preview-toggle input{width:18px;height:18px;accent-color:var(--accent)}.preview-start{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0}input[type=number]{width:110px}.download.secondary{color:var(--accent);background:var(--soft);margin:12px 0 0 8px;border:1px solid var(--border)}select:focus-visible,input[type=number]:focus-visible{outline:3px solid var(--accent);outline-offset:3px}@media(max-width:600px){.download.secondary{margin-left:0}}
+</style>
 <main>
   <div class="eyebrow">Your local audio workspace</div>
   <h1>Make room for your voice.</h1>
@@ -21,6 +24,14 @@
         <label class="choice"><input type="radio" name="mode" value="all"><span><strong>All vocals</strong><span>Reduce both the lead singer and the backing vocals.</span></span></label>
       </div>
     </fieldset>
+    <label for="blend">Reduce artifacts: restore original audio <output id="blend-value" for="blend">0%</output></label>
+    <input id="blend" type="range" min="0" max="30" step="2" value="0" style="display:block;width:100%;min-height:44px;accent-color:var(--accent)" aria-describedby="blend-hint">
+    <p id="blend-hint" class="hint">Optional: add a small amount of the original mix back to soften artifacts. This also brings back some lead vocal; it does not isolate backing vocals. Start with 8–16% and compare a preview.</p>
+    <div class="preview-options">
+      <label class="preview-toggle"><input id="preview" type="checkbox">Try a 30-second preview first</label>
+      <div class="preview-start"><label for="preview-start">Preview start (seconds)</label><input id="preview-start" type="number" min="0" max="86400" step="1" value="60" disabled></div>
+      <p class="hint">Choose a passage with lead and backing singers. Compare before processing the full song.</p>
+    </div>
     <button id="start" type="submit">Create backing track</button>
     <p id="error" class="error" role="alert" hidden></p>
     <section id="status" class="status" hidden aria-labelledby="status-title">
@@ -32,6 +43,7 @@
       <div id="result" hidden>
         <audio id="audio" controls aria-label="Processed backing track"></audio>
         <a id="download" class="download">Download MP3</a>
+        <a id="download-wav" class="download secondary">Download WAV</a>
       </div>
     </section>
   </form>
@@ -43,7 +55,11 @@ const token='__TOKEN__';
 const $=id=>document.getElementById(id);
 let busy=false;
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function setBusy(value){busy=value;$('start').disabled=value;$('file').disabled=value;$('mode-fields').disabled=value;}
+function syncOptions(){$('blend').disabled=busy||document.querySelector('input[name=mode]:checked').value==='all';$('preview').disabled=busy;$('preview-start').disabled=busy||!$('preview').checked;}
+document.querySelectorAll('input[name=mode]').forEach(input=>input.addEventListener('change',syncOptions));
+$('preview').addEventListener('change',syncOptions);
+$('blend').addEventListener('input',()=>{$('blend-value').textContent=$('blend').value+'%'});
+function setBusy(value){busy=value;$('start').disabled=value;$('file').disabled=value;$('mode-fields').disabled=value;syncOptions();}
 async function responseJson(response){let data;try{data=await response.json()}catch{throw new Error('The local tool did not respond. Check that its Terminal window is still open.')}if(!response.ok)throw new Error(data.error||'The request failed.');return data;}
 $('form').addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;
@@ -51,12 +67,13 @@ $('form').addEventListener('submit',async event=>{
   $('error').hidden=true;
   if(file.size>500*1024*1024){$('error').textContent='Choose a file smaller than 500 MB.';$('error').hidden=false;return;}
   const mode=document.querySelector('input[name=mode]:checked').value;
+  const options=new URLSearchParams({mode,preview:$('preview').checked?'1':'0',start:$('preview-start').value,blend:mode==='lead'?$('blend').value:'0'});
   setBusy(true);$('status').hidden=false;$('result').hidden=true;$('audio').removeAttribute('src');$('audio').load();
   $('song-name').textContent=file.name;$('status-title').textContent='Processing your song';
   $('message').textContent='Copying the file to the local processor…';$('progress').removeAttribute('value');$('progress').hidden=false;$('timing').hidden=false;
   let jobId;
   try{
-    const response=await fetch('/api/jobs?mode='+mode,{method:'POST',headers:{'X-Tool-Token':token,'X-Filename':encodeURIComponent(file.name),'Content-Type':'application/octet-stream'},body:file});
+    const response=await fetch('/api/jobs?'+options,{method:'POST',headers:{'X-Tool-Token':token,'X-Filename':encodeURIComponent(file.name),'Content-Type':'application/octet-stream'},body:file});
     jobId=(await responseJson(response)).id;localStorage.setItem('vocal-remover-job',jobId);
     await track(jobId);
   }catch(error){showError(error)}finally{setBusy(false)}
@@ -69,8 +86,9 @@ async function track(id){
     if(job.progress>0)$('progress').value=job.progress;
     if(job.status==='error')throw new Error(job.message);
     if(job.status==='complete'){
-      $('status-title').textContent='Your backing track is ready';$('progress').hidden=true;$('timing').hidden=true;
-      $('audio').src='/api/jobs/'+id+'/audio';$('download').href='/api/jobs/'+id+'/audio?download=1';$('download').setAttribute('download','');$('result').hidden=false;return;
+      $('status-title').textContent=job.preview_seconds?'Your preview is ready':'Your backing track is ready';$('progress').hidden=true;$('timing').hidden=true;
+      $('audio').src='/api/jobs/'+id+'/audio';$('download').href='/api/jobs/'+id+'/audio?download=1';$('download').setAttribute('download','');
+      $('download-wav').href='/api/jobs/'+id+'/audio?format=wav&download=1';$('download-wav').setAttribute('download','');$('result').hidden=false;return;
     }
     await delay(2000);
   }

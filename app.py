@@ -30,10 +30,12 @@ def execute(job_id):
     folder = JOBS / job_id
     try:
         with (folder / 'processing.log').open('w') as log:
-            proc = subprocess.Popen([sys.executable, str(ROOT / 'worker.py'), str(folder), MODES[job['mode']]],
+            proc = subprocess.Popen([sys.executable, str(ROOT / 'worker.py'), str(folder), MODES[job['mode']],
+                                     str(job['start_seconds']), str(job['preview_seconds'] or 0),
+                                     str(job['original_blend'])],
                                     stdout=log, stderr=subprocess.STDOUT, cwd=ROOT)
             result = proc.wait()
-        if result or not (folder / 'result.mp3').is_file():
+        if result or not (folder / 'result.mp3').is_file() or not (folder / 'result.wav').is_file():
             raise RuntimeError('Processing failed. See processing.log in the job folder for details. '
                                'If a model download failed, check your internet connection and try again.')
         job.update(status='complete', progress=100, message='Your backing track is ready.')
@@ -81,7 +83,14 @@ class Handler(BaseHTTPRequestHandler):
         if match[2]:
             if job['status'] != 'complete':
                 return self.reply(409, {'error': 'The track is not ready yet.'})
-            return self.audio(JOBS / job_id / 'result.mp3', job['name'], 'download' in parse_qs(parsed.query))
+            options = parse_qs(parsed.query)
+            audio_format = options.get('format', ['mp3'])[0]
+            if audio_format not in ('mp3', 'wav'):
+                return self.reply(400, {'error': 'Choose MP3 or WAV.'})
+            audio_path = JOBS / job_id / f'result.{audio_format}'
+            if not audio_path.is_file():
+                return self.reply(404, {'error': 'This job has no file in that format.'})
+            return self.audio(audio_path, job['name'], 'download' in options)
         if job['status'] == 'processing':
             log_path = JOBS / job_id / 'processing.log'
             log = log_path.read_text(errors='replace') if log_path.exists() else ''
@@ -89,7 +98,7 @@ class Handler(BaseHTTPRequestHandler):
             if pairs:
                 done, total = map(int, pairs[-1])
                 job['progress'] = min(98, round(done / max(total, 1) * 98))
-                job['message'] = 'Separating the vocals…' if done < total else 'Exporting your MP3…'
+                job['message'] = 'Separating the vocals…' if done < total else 'Exporting your audio…'
             else:
                 job['message'] = 'Loading the model (downloading it if needed)…'
         self.reply(200, dict(job, id=job_id))
@@ -109,14 +118,14 @@ class Handler(BaseHTTPRequestHandler):
             if start > end or start >= size:
                 return self.reply(416, {'error': 'Invalid byte range.'})
         self.send_response(206 if requested else 200)
-        self.send_header('Content-Type', 'audio/mpeg')
+        self.send_header('Content-Type', 'audio/wav' if path.suffix == '.wav' else 'audio/mpeg')
         self.send_header('Accept-Ranges', 'bytes')
         self.send_header('Content-Length', str(end - start + 1))
         if requested:
             self.send_header('Content-Range', f'bytes {start}-{end}/{size}')
         if download:
             safe = re.sub(r'[^A-Za-z0-9._ -]', '_', Path(name).stem)[:100]
-            self.send_header('Content-Disposition', f'attachment; filename="{safe}-backing-track.mp3"')
+            self.send_header('Content-Disposition', f'attachment; filename="{safe}-backing-track{path.suffix}"')
         self.end_headers()
         try:
             with path.open('rb') as stream:
@@ -134,9 +143,27 @@ class Handler(BaseHTTPRequestHandler):
         if not self.valid_host() or self.headers.get('X-Tool-Token') != TOKEN:
             return self.reply(403, {'error': 'Open the tool in its local browser window.'})
         parsed = urlparse(self.path)
-        mode = parse_qs(parsed.query).get('mode', ['lead'])[0]
+        options = parse_qs(parsed.query)
+        mode = options.get('mode', ['lead'])[0]
         if parsed.path != '/api/jobs' or mode not in MODES:
             return self.reply(400, {'error': 'Choose a valid separation mode.'})
+        preview = options.get('preview', ['0'])[0]
+        if preview not in ('0', '1'):
+            return self.reply(400, {'error': 'Choose full song or preview.'})
+        try:
+            start_seconds = int(options.get('start', ['0'])[0]) if preview == '1' else 0
+            if not 0 <= start_seconds <= 86400:
+                raise ValueError
+        except ValueError:
+            return self.reply(400, {'error': 'Preview start must be a whole number of seconds from 0 to 86400.'})
+        try:
+            original_blend = int(options.get('blend', ['0'])[0])
+            if not 0 <= original_blend <= 30:
+                raise ValueError
+        except ValueError:
+            return self.reply(400, {'error': 'Original-audio blend must be from 0 to 30 percent.'})
+        if mode == 'all':
+            original_blend = 0
         try:
             size = int(self.headers.get('Content-Length', '0'))
         except ValueError:
@@ -161,7 +188,10 @@ class Handler(BaseHTTPRequestHandler):
                     chunk = self.rfile.read(min(65536, remaining))
                     if not chunk: raise ValueError('The file transfer was interrupted. Please retry.')
                     f.write(chunk); remaining -= len(chunk)
-            STATE[job_id] = {'name': name, 'mode': mode, 'status': 'processing', 'progress': 0, 'message': 'Preparing your track…'}
+            STATE[job_id] = {'name': name, 'mode': mode, 'start_seconds': start_seconds,
+                             'original_blend': original_blend,
+                             'preview_seconds': 30 if preview == '1' else None,
+                             'status': 'processing', 'progress': 0, 'message': 'Preparing your track…'}
             threading.Thread(target=execute, args=(job_id,), daemon=True).start()
             self.reply(202, {'id': job_id})
         except Exception as exc:

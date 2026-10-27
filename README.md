@@ -10,12 +10,15 @@ Audio is processed on the machine running the app. It is not uploaded to a separ
 
 - MP3, WAV, FLAC, M4A and OGG input, up to 500 MB per file.
 - Two separation modes with independently cached models.
-- Processing status, browser playback and a 320 kbps MP3 download.
+- Processing status, browser playback, 320 kbps MP3 and lossless WAV downloads.
+- 30-second previews and a small original-audio blend control for comparing artifact reduction before a full run.
 - One processing job at a time to limit CPU and memory usage.
 - A local browser interface with no account or API key required.
 - Mac, Windows and Linux launchers; Docker or Podman are optional.
 
 Separation is approximate: overlapping voices, reverb and the original mix can leave vocal remnants or reduce backing vocals or instruments. "Lead vocal" aims to preserve backing vocals; it cannot guarantee doing so.
+
+For difficult songs, enable **Try a 30-second preview first** and choose a representative passage. If the result has watery or muffled artifacts, try **Reduce artifacts: restore original audio** at 8–16%. This can make the music sound more natural, but it also restores a small amount of the lead vocal; it does not separate lead and backing singers independently. The WAV download is preferable if you plan to continue mixing.
 
 ## Run on this Mac (default, no container)
 
@@ -30,7 +33,7 @@ This copy already has a private Python environment and cached models in this fol
 
 2. Keep the Terminal window open. The browser opens automatically.
 3. Choose a song, select a mode and click **Create backing track**.
-4. Listen to the result and click **Download MP3**.
+4. Listen to the result and click **Download MP3** or **Download WAV**.
 5. Press **Control-C** in Terminal to stop the server after processing finishes.
 
 Each launch chooses a free local port. For a fixed address instead:
@@ -252,7 +255,8 @@ mp3-removal/
   models/             Downloaded weights (ignored by Git)
   data/
     jobs/JOB-ID/
-      result.mp3      Completed backing track
+      result.mp3      Completed backing track (compressed)
+      result.wav      Completed backing track (lossless)
       processing.log  Diagnostic log
 ```
 

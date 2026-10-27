@@ -31,6 +31,8 @@ class HTTPTests(unittest.TestCase):
         html=urlopen(self.url).read().decode()
         self.assertIn('value="lead"',html)
         self.assertIn('value="all"',html)
+        self.assertIn('Try a 30-second preview first',html)
+        self.assertIn('Download WAV',html)
         self.assertNotIn('__TOKEN__',html)
 
     def test_rejects_cross_site_post(self):
@@ -61,5 +63,19 @@ class HTTPTests(unittest.TestCase):
         response=urlopen(self.url+f'/api/jobs/{jobid}/audio?download=1')
         self.assertIn('attachment;',response.headers['Content-Disposition'])
         self.assertEqual(response.read(),data)
+
+    def test_wav_download_and_invalid_format(self):
+        jobid='b'*32
+        folder=app.JOBS/jobid;folder.mkdir(exist_ok=True)
+        data=b'RIFF'+bytes(range(128))
+        (folder/'result.wav').write_bytes(data)
+        app.STATE[jobid]={'name':'My Song.mp3','status':'complete'}
+        response=urlopen(self.url+f'/api/jobs/{jobid}/audio?format=wav&download=1')
+        self.assertEqual(response.headers['Content-Type'],'audio/wav')
+        self.assertTrue(response.headers['Content-Disposition'].endswith('.wav"'))
+        self.assertEqual(response.read(),data)
+        with self.assertRaises(HTTPError) as error:
+            urlopen(self.url+f'/api/jobs/{jobid}/audio?format=flac')
+        self.assertEqual(error.exception.code,400)
 
 if __name__=='__main__':unittest.main()
