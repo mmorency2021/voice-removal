@@ -11,14 +11,14 @@ Audio is processed on the machine running the app. It is not uploaded to a separ
 - MP3, WAV, FLAC, M4A and OGG input, up to 500 MB per file.
 - Two separation modes with independently cached models.
 - Processing status, browser playback, 320 kbps MP3 and lossless WAV downloads.
-- 30-second previews and a small original-audio blend control for comparing artifact reduction before a full run.
+- 30-second previews, original-audio blending and optional center-vocal reduction for comparing artifact reduction before a full run.
 - One processing job at a time to limit CPU and memory usage.
 - A local browser interface with no account or API key required.
 - Mac, Windows and Linux launchers; Docker or Podman are optional.
 
 Separation is approximate: overlapping voices, reverb and the original mix can leave vocal remnants or reduce backing vocals or instruments. "Lead vocal" aims to preserve backing vocals; it cannot guarantee doing so.
 
-For difficult songs, enable **Try a 30-second preview first** and choose a representative passage. If the result has watery or muffled artifacts, try **Reduce artifacts: restore original audio** at 8–16%. This can make the music sound more natural, but it also restores a small amount of the lead vocal; it does not separate lead and backing singers independently. The WAV download is preferable if you plan to continue mixing.
+For difficult songs, enable **Try a 30-second preview first** and choose a representative passage. If the result has watery or muffled artifacts, try **Reduce artifacts: restore original audio** at 8–16%. If a lead whisper remains, try **Extra center-vocal reduction** at 10–20%. Center reduction can also reduce centered backing vocals, so compare the preview before processing the full song. The WAV download is preferable if you plan to continue mixing.
 
 ## Run on this Mac (default, no container)
 

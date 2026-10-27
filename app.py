@@ -32,7 +32,7 @@ def execute(job_id):
         with (folder / 'processing.log').open('w') as log:
             proc = subprocess.Popen([sys.executable, str(ROOT / 'worker.py'), str(folder), MODES[job['mode']],
                                      str(job['start_seconds']), str(job['preview_seconds'] or 0),
-                                     str(job['original_blend'])],
+                                     str(job['original_blend']), str(job['center_reduce'])],
                                     stdout=log, stderr=subprocess.STDOUT, cwd=ROOT)
             result = proc.wait()
         if result or not (folder / 'result.mp3').is_file() or not (folder / 'result.wav').is_file():
@@ -162,8 +162,15 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError
         except ValueError:
             return self.reply(400, {'error': 'Original-audio blend must be from 0 to 30 percent.'})
+        try:
+            center_reduce = int(options.get('center', ['0'])[0])
+            if not 0 <= center_reduce <= 30:
+                raise ValueError
+        except ValueError:
+            return self.reply(400, {'error': 'Center reduction must be from 0 to 30 percent.'})
         if mode == 'all':
             original_blend = 0
+            center_reduce = 0
         try:
             size = int(self.headers.get('Content-Length', '0'))
         except ValueError:
@@ -189,7 +196,7 @@ class Handler(BaseHTTPRequestHandler):
                     if not chunk: raise ValueError('The file transfer was interrupted. Please retry.')
                     f.write(chunk); remaining -= len(chunk)
             STATE[job_id] = {'name': name, 'mode': mode, 'start_seconds': start_seconds,
-                             'original_blend': original_blend,
+                             'original_blend': original_blend, 'center_reduce': center_reduce,
                              'preview_seconds': 30 if preview == '1' else None,
                              'status': 'processing', 'progress': 0, 'message': 'Preparing your track…'}
             threading.Thread(target=execute, args=(job_id,), daemon=True).start()

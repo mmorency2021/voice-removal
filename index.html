@@ -27,6 +27,9 @@ select,input[type=number]{font:inherit;color:var(--ink);background:var(--surface
     <label for="blend">Reduce artifacts: restore original audio <output id="blend-value" for="blend">0%</output></label>
     <input id="blend" type="range" min="0" max="30" step="2" value="0" style="display:block;width:100%;min-height:44px;accent-color:var(--accent)" aria-describedby="blend-hint">
     <p id="blend-hint" class="hint">Optional: add a small amount of the original mix back to soften artifacts. This also brings back some lead vocal; it does not isolate backing vocals. Start with 8–16% and compare a preview.</p>
+    <label for="center">Extra center-vocal reduction <output id="center-value" for="center">0%</output></label>
+    <input id="center" type="range" min="0" max="30" step="2" value="0" style="display:block;width:100%;min-height:44px;accent-color:var(--accent)" aria-describedby="center-hint">
+    <p id="center-hint" class="hint">Optional: reduce sound placed in the stereo center, where lead vocals often sit. This can also reduce centered backing vocals. Start with 10–20% only if you still hear a lead whisper.</p>
     <div class="preview-options">
       <label class="preview-toggle"><input id="preview" type="checkbox">Try a 30-second preview first</label>
       <div class="preview-start"><label for="preview-start">Preview start (seconds)</label><input id="preview-start" type="number" min="0" max="86400" step="1" value="60" disabled></div>
@@ -55,10 +58,11 @@ const token='__TOKEN__';
 const $=id=>document.getElementById(id);
 let busy=false;
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-function syncOptions(){$('blend').disabled=busy||document.querySelector('input[name=mode]:checked').value==='all';$('preview').disabled=busy;$('preview-start').disabled=busy||!$('preview').checked;}
+function syncOptions(){const all=document.querySelector('input[name=mode]:checked').value==='all';$('blend').disabled=busy||all;$('center').disabled=busy||all;$('preview').disabled=busy;$('preview-start').disabled=busy||!$('preview').checked;}
 document.querySelectorAll('input[name=mode]').forEach(input=>input.addEventListener('change',syncOptions));
 $('preview').addEventListener('change',syncOptions);
 $('blend').addEventListener('input',()=>{$('blend-value').textContent=$('blend').value+'%'});
+$('center').addEventListener('input',()=>{$('center-value').textContent=$('center').value+'%'});
 function setBusy(value){busy=value;$('start').disabled=value;$('file').disabled=value;$('mode-fields').disabled=value;syncOptions();}
 async function responseJson(response){let data;try{data=await response.json()}catch{throw new Error('The local tool did not respond. Check that its Terminal window is still open.')}if(!response.ok)throw new Error(data.error||'The request failed.');return data;}
 $('form').addEventListener('submit',async event=>{
@@ -67,7 +71,7 @@ $('form').addEventListener('submit',async event=>{
   $('error').hidden=true;
   if(file.size>500*1024*1024){$('error').textContent='Choose a file smaller than 500 MB.';$('error').hidden=false;return;}
   const mode=document.querySelector('input[name=mode]:checked').value;
-  const options=new URLSearchParams({mode,preview:$('preview').checked?'1':'0',start:$('preview-start').value,blend:mode==='lead'?$('blend').value:'0'});
+  const options=new URLSearchParams({mode,preview:$('preview').checked?'1':'0',start:$('preview-start').value,blend:mode==='lead'?$('blend').value:'0',center:mode==='lead'?$('center').value:'0'});
   setBusy(true);$('status').hidden=false;$('result').hidden=true;$('audio').removeAttribute('src');$('audio').load();
   $('song-name').textContent=file.name;$('status-title').textContent='Processing your song';
   $('message').textContent='Copying the file to the local processor…';$('progress').removeAttribute('value');$('progress').hidden=false;$('timing').hidden=false;

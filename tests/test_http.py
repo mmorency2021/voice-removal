@@ -33,6 +33,7 @@ class HTTPTests(unittest.TestCase):
         self.assertIn('value="all"',html)
         self.assertIn('Try a 30-second preview first',html)
         self.assertIn('Download WAV',html)
+        self.assertIn('Extra center-vocal reduction',html)
         self.assertNotIn('__TOKEN__',html)
 
     def test_rejects_cross_site_post(self):
