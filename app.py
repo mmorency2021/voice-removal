@@ -21,7 +21,8 @@ TOKEN = secrets.token_urlsafe(32)
 LOCK = threading.Lock()
 ACTIVE = None
 STATE = {}
-MODES = {'lead': 'UVR_MDXNET_KARA_2.onnx', 'all': 'UVR-MDX-NET-Inst_HQ_3.onnx'}
+MODES = {'lead': 'UVR_MDXNET_KARA_2.onnx', 'all': 'UVR-MDX-NET-Inst_HQ_3.onnx',
+         'roformer': 'mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt'}
 MAX_BYTES = 500 * 1024 * 1024
 
 def execute(job_id):
@@ -168,7 +169,7 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError
         except ValueError:
             return self.reply(400, {'error': 'Center reduction must be from 0 to 30 percent.'})
-        if mode == 'all':
+        if mode not in ('lead', 'roformer'):
             original_blend = 0
             center_reduce = 0
         try:

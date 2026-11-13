@@ -33,34 +33,34 @@ separator.torch_device=torch.device('cpu')
 separator.onnx_execution_provider=['CPUExecutionProvider']
 separator.load_model(model_filename=model)
 files=separator.separate(str(wav),{'Instrumental':'backing'})
-if original_blend or center_reduce:
-    import numpy as np
-    import soundfile as sf
-    original,sr=sf.read(wav,always_2d=True)
-    processed,output_sr=sf.read(folder/'backing.wav',always_2d=True)
-    if sr!=output_sr or original.shape!=processed.shape:
-        raise ValueError('Cannot blend audio with mismatched sample rates or dimensions.')
-    restored=processed
-    if original_blend:
-        blend=original_blend/100
-        restored=(1-blend)*restored+blend*original
-    if center_reduce and restored.shape[1] == 2:
-        left,right=restored[:,0],restored[:,1]
-        center=(left+right)*0.5
-        side=(left-right)*0.5
-        amount=center_reduce/100
-        restored=np.column_stack((side+center*(1-amount),-side+center*(1-amount)))
-    peak=np.max(np.abs(restored))
-    if peak>0.95:
-        restored*=0.95/peak
-    sf.write(folder/'backing.wav',restored,sr,subtype='PCM_16')
+import numpy as np
+import soundfile as sf
+original,sr=sf.read(wav,always_2d=True)
+processed,output_sr=sf.read(folder/'backing.wav',always_2d=True)
+if sr!=output_sr or original.shape!=processed.shape:
+    raise ValueError('Cannot blend audio with mismatched sample rates or dimensions.')
+restored=processed
+if original_blend:
+    blend=original_blend/100
+    restored=(1-blend)*restored+blend*original
+if center_reduce and restored.shape[1] == 2:
+    left,right=restored[:,0],restored[:,1]
+    center=(left+right)*0.5
+    side=(left-right)*0.5
+    amount=center_reduce/100
+    restored=np.column_stack((side+center*(1-amount),-side+center*(1-amount)))
+# Always normalize to prevent clipping artifacts in the output
+peak=np.max(np.abs(restored))
+if peak>0.95:
+    restored*=0.95/peak
+sf.write(folder/'backing.wav',restored,sr,subtype='PCM_16')
 wav_result=folder/'result.wav'
 (folder/'backing.wav').replace(wav_result)
 # Export both formats. The WAV is useful when the user wants to continue mixing
 # and avoids adding another lossy encode to an already processed track.
 result=folder/'result.mp3'
 subprocess.run(['ffmpeg','-nostdin','-v','error','-y','-i',str(wav_result),'-codec:a','libmp3lame',
-                '-b:a','320k',str(result)],check=True)
+                '-b:a','320k','-compression_level','0',str(result)],check=True)
 for path in [source,wav]:
     path.unlink(missing_ok=True)
 print('COMPLETE',flush=True)
